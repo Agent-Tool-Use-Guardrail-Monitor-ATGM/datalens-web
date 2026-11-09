@@ -1,7 +1,26 @@
 
 import './App.css'
+import AppStatus, { type AppStatusType } from './AppStatus'
+
+const previewStatuses = [
+  'loading',
+  'signed-out',
+  'access-denied',
+  'unavailable',
+] as const
+
+function isAppStatusType(value: string | null): value is AppStatusType {
+  return value !== null && previewStatuses.includes(value as AppStatusType)
+}
 
 function App() {
+  const previewStatus = new URLSearchParams(window.location.search).get('status')
+
+  // Status previews are available only during local development.
+  if (import.meta.env.DEV && isAppStatusType(previewStatus)) {
+    return <AppStatus status={previewStatus} />
+  }
+
   return (
     <div className="app">
       <aside className="sidebar">

@@ -409,3 +409,44 @@ footer span {
     flex-direction: column;
   }
 }
+
+/* Application status screens */
+
+.app-status {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  text-align: center;
+  background: #f7f8fc;
+}
+
+.app-status h1 {
+  font-size: 26px;
+  margin: 18px 0 8px;
+  letter-spacing: -0.5px;
+}
+
+.app-status p {
+  max-width: 420px;
+  color: #81869a;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e5e4f7;
+  border-top-color: #7774ee;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
