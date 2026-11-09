@@ -75,4 +75,35 @@ describe('apiRequest', () => {
 
     expect(result).toBeUndefined()
   })
+
+  it('sets JSON Content-Type when sending a request body', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ success: true }), { status: 200 }),
+    )
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    await apiRequest('/api/test', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'Test' }),
+    })
+
+    const requestOptions = fetchMock.mock.calls[0][1] as RequestInit
+
+    expect(new Headers(requestOptions.headers).get('Content-Type')).toBe(
+      'application/json',
+    )
+  })
+it('handles malformed backend error responses', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response('Internal server error', { status: 500 }),
+      ),
+    )
+
+    await expect(apiRequest('/api/test')).rejects.toThrow(
+      'Request failed with status 500',
+    )
+  })
 })
