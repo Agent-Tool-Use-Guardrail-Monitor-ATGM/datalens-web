@@ -1,6 +1,7 @@
 
 import './App.css'
 import AppStatus, { type AppStatusType } from './AppStatus'
+import { USE_MOCK_DATA } from './config'
 
 const previewStatuses = [
   'loading',
@@ -17,7 +18,7 @@ function App() {
   const previewStatus = new URLSearchParams(window.location.search).get('status')
 
   // Status previews are available only during local development.
-  if (import.meta.env.DEV && isAppStatusType(previewStatus)) {
+  if (USE_MOCK_DATA && isAppStatusType(previewStatus)) {
     return <AppStatus status={previewStatus} />
   }
 
