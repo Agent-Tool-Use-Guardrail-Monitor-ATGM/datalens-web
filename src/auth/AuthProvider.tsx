@@ -7,6 +7,10 @@ import type { User } from 'oidc-client-ts'
 import { AuthContext } from './AuthContext'
 import { oidcUserManager } from './oidc'
 import { getCurrentProfile, type Me } from './profile'
+import {
+  activateTokenSession,
+  invalidateTokenSession,
+} from './token'
 
 let callbackPromise: Promise<User> | null = null
 
@@ -61,6 +65,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const handleUserUnloaded = () => {
+      void invalidateTokenSession()
+
       if (active) {
         setUser(null)
         setProfileState(emptyProfileState)
@@ -77,11 +83,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (!active) return
 
+          await activateTokenSession()
+
+          if (!active) return
+
           callbackPromise = null
           window.history.replaceState({}, document.title, '/')
           setUser(authenticatedUser)
         } else {
           const existingUser = await oidcUserManager.getUser()
+
+          if (!active) return
+
+          if (existingUser) {
+            await activateTokenSession()
+          }
 
           if (active) setUser(existingUser)
         }
@@ -153,6 +169,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function signOut() {
     setError(null)
     setProfileState(emptyProfileState)
+
+    await invalidateTokenSession()
 
     try {
       await oidcUserManager.signoutRedirect()

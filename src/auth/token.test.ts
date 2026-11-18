@@ -10,7 +10,11 @@ vi.mock('./oidc', () => ({
 }))
 
 import { oidcUserManager } from './oidc'
-import { getAccessToken } from './token'
+import {
+  activateTokenSession,
+  getAccessToken,
+  invalidateTokenSession,
+} from './token'
 
 const mockedManager = vi.mocked(oidcUserManager)
 
@@ -25,9 +29,10 @@ function createUser(overrides: Partial<User> = {}): User {
 }
 
 describe('getAccessToken', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
     mockedManager.removeUser.mockResolvedValue()
+    await activateTokenSession()
   })
 
   afterEach(() => {
@@ -143,5 +148,65 @@ describe('getAccessToken', () => {
       'shared-new-token',
     ])
     expect(mockedManager.signinSilent).toHaveBeenCalledTimes(1)
+  })
+
+  it('rejects a refresh result when the session is invalidated during logout', async () => {
+    mockedManager.getUser.mockResolvedValue(createUser())
+
+    let resolveRefresh!: (user: User) => void
+
+    const refreshResult = new Promise<User>((resolve) => {
+      resolveRefresh = resolve
+    })
+
+    mockedManager.signinSilent.mockReturnValue(refreshResult)
+
+    const tokenRequest = getAccessToken(true)
+
+    await vi.waitFor(() => {
+      expect(mockedManager.signinSilent).toHaveBeenCalledTimes(1)
+    })
+
+    const invalidation = invalidateTokenSession()
+
+    resolveRefresh(createUser({ access_token: 'stale-token' }))
+
+    await expect(tokenRequest).resolves.toBeNull()
+    await invalidation
+
+    // The old refresh must not remove a potentially newer local user.
+    expect(mockedManager.removeUser).not.toHaveBeenCalled()
+  })
+
+  it('waits for an old refresh before activating a new session', async () => {
+    mockedManager.getUser.mockResolvedValue(createUser())
+
+    let resolveRefresh!: (user: User) => void
+
+    const refreshResult = new Promise<User>((resolve) => {
+      resolveRefresh = resolve
+    })
+
+    mockedManager.signinSilent.mockReturnValue(refreshResult)
+
+    const oldTokenRequest = getAccessToken(true)
+
+    await vi.waitFor(() => {
+      expect(mockedManager.signinSilent).toHaveBeenCalledTimes(1)
+    })
+
+    const activation = activateTokenSession()
+
+    resolveRefresh(createUser({ access_token: 'old-session-token' }))
+
+    await expect(oldTokenRequest).resolves.toBeNull()
+    await activation
+
+    mockedManager.getUser.mockResolvedValue(
+      createUser({ access_token: 'new-session-token' }),
+    )
+
+    await expect(getAccessToken()).resolves.toBe('new-session-token')
+    expect(mockedManager.removeUser).not.toHaveBeenCalled()
   })
 })
