@@ -1,4 +1,3 @@
-
 import './App.css'
 import AppStatus, { type AppStatusType } from './AppStatus'
 import { USE_MOCK_DATA } from './config'
@@ -16,7 +15,16 @@ function isAppStatusType(value: string | null): value is AppStatusType {
 }
 
 function App() {
-  const { user, isLoading, error, signIn, signOut } = useAuth()
+  const {
+    user,
+    profile,
+    isLoading,
+    isProfileLoading,
+    error,
+    profileError,
+    signIn,
+    signOut,
+  } = useAuth()
 
   const previewStatus = new URLSearchParams(window.location.search).get('status')
 
@@ -44,10 +52,21 @@ function App() {
     )
   }
 
+  const backendProfile =
+    profile?.profile_status === 'ready' ? profile.profile : null
+
   const displayName =
-    user.profile.name ||
-    user.profile.preferred_username ||
+    backendProfile?.display_name ||
+    backendProfile?.username ||
     'My account'
+
+  const profileDescription = isProfileLoading
+    ? 'Loading profile...'
+    : profileError
+      ? 'Profile unavailable'
+      : profile?.profile_status === 'synchronizing'
+        ? 'Profile synchronizing'
+        : backendProfile?.email || 'Signed in'
 
   return (
     <div className="app">
@@ -78,7 +97,7 @@ function App() {
             </div>
             <div>
               <strong>{displayName}</strong>
-              <small>{user.profile.email || 'Signed in'}</small>
+              <small>{profileDescription}</small>
             </div>
           </div>
 

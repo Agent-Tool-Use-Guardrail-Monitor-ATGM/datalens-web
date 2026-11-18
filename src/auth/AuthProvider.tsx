@@ -6,6 +6,7 @@ import {
 import type { User } from 'oidc-client-ts'
 import { AuthContext } from './AuthContext'
 import { oidcUserManager } from './oidc'
+import { getCurrentProfile, type Me } from './profile'
 
 let callbackPromise: Promise<User> | null = null
 
@@ -14,10 +15,43 @@ function processSigninCallback(): Promise<User> {
   return callbackPromise
 }
 
+interface ProfileState {
+  key: string | null
+  profile: Me | null
+  error: string | null
+}
+
+const emptyProfileState: ProfileState = {
+  key: null,
+  profile: null,
+  error: null,
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [profileState, setProfileState] =
+    useState<ProfileState>(emptyProfileState)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const issuer = user?.profile.iss ?? null
+  const subject = user?.profile.sub ?? null
+
+  const profileKey =
+    issuer && subject ? `${issuer}\u0000${subject}` : null
+
+  const isProfileLoading =
+    profileKey !== null && profileState.key !== profileKey
+
+  const profile =
+    profileKey !== null && profileState.key === profileKey
+      ? profileState.profile
+      : null
+
+  const profileError =
+    profileKey !== null && profileState.key === profileKey
+      ? profileState.error
+      : null
 
   useEffect(() => {
     let active = true
@@ -27,7 +61,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const handleUserUnloaded = () => {
-      if (active) setUser(null)
+      if (active) {
+        setUser(null)
+        setProfileState(emptyProfileState)
+      }
     }
 
     oidcUserManager.events.addUserLoaded(handleUserLoaded)
@@ -69,6 +106,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  useEffect(() => {
+    if (!issuer || !subject || !profileKey) return
+
+    let active = true
+
+    async function loadProfile() {
+      try {
+        const currentProfile = await getCurrentProfile()
+
+        if (active) {
+          setProfileState({
+            key: profileKey,
+            profile: currentProfile,
+            error: null,
+          })
+        }
+      } catch {
+        if (active) {
+          setProfileState({
+            key: profileKey,
+            profile: null,
+            error: 'Unable to load your account profile. Please try again.',
+          })
+        }
+      }
+    }
+
+    void loadProfile()
+
+    return () => {
+      active = false
+    }
+  }, [issuer, subject, profileKey])
+
   async function signIn() {
     setError(null)
 
@@ -81,19 +152,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signOut() {
     setError(null)
+    setProfileState(emptyProfileState)
 
     try {
       await oidcUserManager.signoutRedirect()
     } catch {
       await oidcUserManager.removeUser()
       setUser(null)
+      setProfileState(emptyProfileState)
       setError('Local session cleared, but the identity provider sign-out failed.')
     }
   }
 
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, error, signIn, signOut }}
+      value={{
+        user,
+        profile,
+        isLoading,
+        isProfileLoading,
+        error,
+        profileError,
+        signIn,
+        signOut,
+      }}
     >
       {children}
     </AuthContext.Provider>
