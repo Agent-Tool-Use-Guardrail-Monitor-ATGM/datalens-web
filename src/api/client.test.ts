@@ -1,4 +1,3 @@
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../auth/token', () => ({
@@ -104,6 +103,49 @@ describe('apiRequest', () => {
         body: JSON.stringify({ title: 'Sales' }),
       }),
     ).rejects.toThrow('Request failed with status 401')
+
+    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(getAccessToken).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not retry a GET request again if the refreshed token also gets 401', async () => {
+    mockedGetAccessToken
+      .mockResolvedValueOnce('old-token')
+      .mockResolvedValueOnce('new-token')
+
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({ message: 'Unauthorized' }, 401))
+      .mockResolvedValueOnce(jsonResponse({ message: 'Unauthorized' }, 401))
+
+    await expect(apiRequest('/auth/me')).rejects.toThrow(
+      'Request failed with status 401',
+    )
+
+    expect(fetch).toHaveBeenCalledTimes(2)
+    expect(getAccessToken).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not refresh or retry after a 403 Forbidden response', async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse({ message: 'Forbidden' }, 403),
+    )
+
+    await expect(apiRequest('/admin/settings')).rejects.toThrow(
+      'Request failed with status 403',
+    )
+
+    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(getAccessToken).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not retry a 503 Service Unavailable response', async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse({ message: 'Service unavailable' }, 503),
+    )
+
+    await expect(apiRequest('/auth/me')).rejects.toThrow(
+      'Request failed with status 503',
+    )
 
     expect(fetch).toHaveBeenCalledTimes(1)
     expect(getAccessToken).toHaveBeenCalledTimes(1)
