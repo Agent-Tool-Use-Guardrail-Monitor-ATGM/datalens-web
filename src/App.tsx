@@ -1,7 +1,7 @@
-
 import './App.css'
 import AppStatus, { type AppStatusType } from './AppStatus'
 import { USE_MOCK_DATA } from './config'
+import { useAuth } from './auth/useAuth'
 
 const previewStatuses = [
   'loading',
@@ -15,12 +15,58 @@ function isAppStatusType(value: string | null): value is AppStatusType {
 }
 
 function App() {
+  const {
+    user,
+    profile,
+    isLoading,
+    isProfileLoading,
+    error,
+    profileError,
+    signIn,
+    signOut,
+  } = useAuth()
+
   const previewStatus = new URLSearchParams(window.location.search).get('status')
 
   // Status previews are available only during local development.
   if (USE_MOCK_DATA && isAppStatusType(previewStatus)) {
     return <AppStatus status={previewStatus} />
   }
+
+  if (isLoading) {
+    return <AppStatus status="loading" />
+  }
+
+  if (!user) {
+    return (
+      <main className="app-status">
+        <h1>Welcome to DataLens</h1>
+        <p>Sign in to access your data workspace.</p>
+
+        {error && <p role="alert">{error}</p>}
+
+        <button onClick={() => void signIn()}>
+          Sign in with DataLens
+        </button>
+      </main>
+    )
+  }
+
+  const backendProfile =
+    profile?.profile_status === 'ready' ? profile.profile : null
+
+  const displayName =
+    backendProfile?.display_name ||
+    backendProfile?.username ||
+    'My account'
+
+  const profileDescription = isProfileLoading
+    ? 'Loading profile...'
+    : profileError
+      ? 'Profile unavailable'
+      : profile?.profile_status === 'synchronizing'
+        ? 'Profile synchronizing'
+        : backendProfile?.email || 'Signed in'
 
   return (
     <div className="app">
@@ -46,22 +92,31 @@ function App() {
 
         <div className="sidebar-bottom">
           <div className="profile">
-            <div className="avatar">U</div>
+            <div className="avatar">
+              {displayName.charAt(0).toUpperCase()}
+            </div>
             <div>
-              <strong>My account</strong>
-              <small>Workspace member</small>
+              <strong>{displayName}</strong>
+              <small>{profileDescription}</small>
             </div>
           </div>
+
+          <button onClick={() => void signOut()}>
+            Sign out
+          </button>
+
           <div className="version">DataLens · Preview</div>
         </div>
       </aside>
 
       <main className="main-content">
         <header className="topbar">
-          <div className="breadcrumb">Workspace <span>/</span> Overview</div>
+          <div className="breadcrumb">
+            Workspace <span>/</span> Overview
+          </div>
           <div className="status">
             <span className="status-dot"></span>
-            Local preview
+            Signed in
           </div>
         </header>
 
@@ -86,7 +141,9 @@ function App() {
 
             <label htmlFor="dataset">SELECT DATASET</label>
             <select id="dataset" defaultValue="">
-              <option value="" disabled>Choose a dataset...</option>
+              <option value="" disabled>
+                Choose a dataset...
+              </option>
               <option value="demo">Demo dataset (preview only)</option>
             </select>
 
@@ -115,7 +172,10 @@ function App() {
             <div className="empty-state">
               <div className="empty-icon">◷</div>
               <strong>No activity yet</strong>
-              <p>Your analysis history will appear here once you run your first query.</p>
+              <p>
+                Your analysis history will appear here once you run your
+                first query.
+              </p>
             </div>
           </section>
 
