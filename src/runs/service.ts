@@ -13,6 +13,7 @@ export interface ConversationPage {
 export interface ConversationHistory {
   conversation: Conversation
   messages: ConversationMessage[]
+  next_cursor: string | null
 }
 
 export interface RunPage {
@@ -28,6 +29,8 @@ export interface RunService {
 
   getConversationHistory(
     conversationId: string,
+    limit?: number,
+    cursor?: string,
   ): Promise<ConversationHistory>
 
   listConversationRuns(
