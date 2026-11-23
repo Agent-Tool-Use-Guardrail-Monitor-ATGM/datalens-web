@@ -450,3 +450,31 @@ footer span {
     transform: rotate(360deg);
   }
 }
+/* Workspace navigation buttons */
+.navigation .nav-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.navigation .nav-item:hover {
+  background: #252a43;
+  color: #fff;
+}
+
+.navigation .nav-item.active {
+  background: #303552;
+  color: #fff;
+}
+
+.overview-history-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #7774ee;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}

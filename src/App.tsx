@@ -1,7 +1,11 @@
+﻿import { useState } from 'react'
 import './App.css'
 import AppStatus, { type AppStatusType } from './AppStatus'
+import DatasetWorkspace from './datasets/DatasetWorkspace'
 import { USE_MOCK_DATA } from './config'
 import { useAuth } from './auth/useAuth'
+
+type WorkspacePage = 'overview' | 'datasets' | 'runs'
 
 const previewStatuses = [
   'loading',
@@ -26,6 +30,7 @@ function App() {
     signOut,
   } = useAuth()
 
+  const [currentPage, setCurrentPage] = useState<WorkspacePage>('overview')
   const previewStatus = new URLSearchParams(window.location.search).get('status')
 
   // Status previews are available only during local development.
@@ -42,9 +47,7 @@ function App() {
       <main className="app-status">
         <h1>Welcome to DataLens</h1>
         <p>Sign in to access your data workspace.</p>
-
         {error && <p role="alert">{error}</p>}
-
         <button onClick={() => void signIn()}>
           Sign in with DataLens
         </button>
@@ -68,6 +71,13 @@ function App() {
         ? 'Profile synchronizing'
         : backendProfile?.email || 'Signed in'
 
+  const pageTitle =
+    currentPage === 'datasets'
+      ? 'Datasets'
+      : currentPage === 'runs'
+        ? 'Run history'
+        : 'Overview'
+
   return (
     <div className="app">
       <aside className="sidebar">
@@ -78,16 +88,31 @@ function App() {
 
         <div className="workspace-label">WORKSPACE</div>
 
-        <nav className="navigation">
-          <a href="#" className="nav-item active">
+        <nav className="navigation" aria-label="Workspace navigation">
+          <button
+            type="button"
+            className={`nav-item ${currentPage === 'overview' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('overview')}
+            aria-current={currentPage === 'overview' ? 'page' : undefined}
+          >
             <span>▦</span> Overview
-          </a>
-          <a href="#" className="nav-item">
+          </button>
+          <button
+            type="button"
+            className={`nav-item ${currentPage === 'datasets' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('datasets')}
+            aria-current={currentPage === 'datasets' ? 'page' : undefined}
+          >
             <span>▤</span> Datasets
-          </a>
-          <a href="#" className="nav-item">
+          </button>
+          <button
+            type="button"
+            className={`nav-item ${currentPage === 'runs' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('runs')}
+            aria-current={currentPage === 'runs' ? 'page' : undefined}
+          >
             <span>◷</span> Run history
-          </a>
+          </button>
         </nav>
 
         <div className="sidebar-bottom">
@@ -112,7 +137,7 @@ function App() {
       <main className="main-content">
         <header className="topbar">
           <div className="breadcrumb">
-            Workspace <span>/</span> Overview
+            Workspace <span>/</span> {pageTitle}
           </div>
           <div className="status">
             <span className="status-dot"></span>
@@ -121,67 +146,91 @@ function App() {
         </header>
 
         <div className="content">
-          <section className="welcome">
-            <p className="eyebrow">YOUR DATA WORKSPACE</p>
-            <h1>Make sense of your data.</h1>
-            <p className="subtitle">
-              Explore datasets, ask questions, and discover insights
-              with your AI statistics assistant.
-            </p>
-          </section>
-
-          <section className="question-card">
-            <div className="card-heading">
-              <div>
-                <h2>Ask your data</h2>
-                <p>Start by selecting a dataset and entering a question.</p>
-              </div>
-              <span className="ai-label">✦ AI ASSISTANT</span>
-            </div>
-
-            <label htmlFor="dataset">SELECT DATASET</label>
-            <select id="dataset" defaultValue="">
-              <option value="" disabled>
-                Choose a dataset...
-              </option>
-              <option value="demo">Demo dataset (preview only)</option>
-            </select>
-
-            <label htmlFor="question">YOUR QUESTION</label>
-            <textarea
-              id="question"
-              placeholder="e.g. What are the main trends in this dataset?"
-              rows={4}
-            />
-
-            <div className="question-footer">
-              <span>Connect a dataset to get started.</span>
-              <button disabled>Run analysis ↗</button>
-            </div>
-          </section>
-
-          <section className="activity-section">
-            <div className="section-heading">
-              <div>
-                <h2>Recent activity</h2>
-                <p>Your latest analysis runs will appear here.</p>
-              </div>
-              <a href="#">View history →</a>
-            </div>
-
-            <div className="empty-state">
-              <div className="empty-icon">◷</div>
-              <strong>No activity yet</strong>
-              <p>
-                Your analysis history will appear here once you run your
-                first query.
+          {currentPage === 'datasets' ? (
+            <DatasetWorkspace />
+          ) : currentPage === 'runs' ? (
+            <section className="welcome">
+              <p className="eyebrow">YOUR WORKSPACE</p>
+              <h1>Run history</h1>
+              <p className="subtitle">
+                Your analysis runs will appear here when run history is available.
               </p>
-            </div>
-          </section>
+              <div className="empty-state">
+                <div className="empty-icon">◷</div>
+                <strong>No runs yet</strong>
+                <p>Completed analysis runs will be listed here.</p>
+              </div>
+            </section>
+          ) : (
+            <>
+              <section className="welcome">
+                <p className="eyebrow">YOUR DATA WORKSPACE</p>
+                <h1>Make sense of your data.</h1>
+                <p className="subtitle">
+                  Explore datasets, ask questions, and discover insights
+                  with your AI statistics assistant.
+                </p>
+              </section>
 
-          <footer>
-            DataLens <span>·</span> Your data, understood.
-          </footer>
+              <section className="question-card">
+                <div className="card-heading">
+                  <div>
+                    <h2>Ask your data</h2>
+                    <p>Start by selecting a dataset and entering a question.</p>
+                  </div>
+                  <span className="ai-label">✧ AI ASSISTANT</span>
+                </div>
+
+                <label htmlFor="dataset">SELECT DATASET</label>
+                <select id="dataset" defaultValue="">
+                  <option value="" disabled>
+                    Choose a dataset...
+                  </option>
+                  <option value="demo">Demo dataset (preview only)</option>
+                </select>
+
+                <label htmlFor="question">YOUR QUESTION</label>
+                <textarea
+                  id="question"
+                  placeholder="e.g. What are the main trends in this dataset?"
+                  rows={4}
+                />
+
+                <div className="question-footer">
+                  <span>Connect a dataset to get started.</span>
+                  <button disabled>Run analysis ↗</button>
+                </div>
+              </section>
+
+              <section className="activity-section">
+                <div className="section-heading">
+                  <div>
+                    <h2>Recent activity</h2>
+                    <p>Your latest analysis runs will appear here.</p>
+                  </div>
+                  <button
+                    className="overview-history-link"
+                    onClick={() => setCurrentPage('runs')}
+                  >
+                    View history →
+                  </button>
+                </div>
+
+                <div className="empty-state">
+                  <div className="empty-icon">◷</div>
+                  <strong>No activity yet</strong>
+                  <p>
+                    Your analysis history will appear here once you run your
+                    first query.
+                  </p>
+                </div>
+              </section>
+
+              <footer>
+                DataLens <span>·</span> Your data, understood.
+              </footer>
+            </>
+          )}
         </div>
       </main>
     </div>
