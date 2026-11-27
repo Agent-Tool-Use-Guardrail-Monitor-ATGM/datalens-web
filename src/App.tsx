@@ -2,6 +2,8 @@
 import './App.css'
 import AppStatus, { type AppStatusType } from './AppStatus'
 import DatasetWorkspace from './datasets/DatasetWorkspace'
+import RunHistory from './runs/RunHistory'
+import AskData from './AskData'
 import { USE_MOCK_DATA } from './config'
 import { useAuth } from './auth/useAuth'
 
@@ -97,6 +99,7 @@ function App() {
           >
             <span>▦</span> Overview
           </button>
+
           <button
             type="button"
             className={`nav-item ${currentPage === 'datasets' ? 'active' : ''}`}
@@ -105,6 +108,7 @@ function App() {
           >
             <span>▤</span> Datasets
           </button>
+
           <button
             type="button"
             className={`nav-item ${currentPage === 'runs' ? 'active' : ''}`}
@@ -149,18 +153,7 @@ function App() {
           {currentPage === 'datasets' ? (
             <DatasetWorkspace />
           ) : currentPage === 'runs' ? (
-            <section className="welcome">
-              <p className="eyebrow">YOUR WORKSPACE</p>
-              <h1>Run history</h1>
-              <p className="subtitle">
-                Your analysis runs will appear here when run history is available.
-              </p>
-              <div className="empty-state">
-                <div className="empty-icon">◷</div>
-                <strong>No runs yet</strong>
-                <p>Completed analysis runs will be listed here.</p>
-              </div>
-            </section>
+            <RunHistory />
           ) : (
             <>
               <section className="welcome">
@@ -172,35 +165,9 @@ function App() {
                 </p>
               </section>
 
-              <section className="question-card">
-                <div className="card-heading">
-                  <div>
-                    <h2>Ask your data</h2>
-                    <p>Start by selecting a dataset and entering a question.</p>
-                  </div>
-                  <span className="ai-label">✧ AI ASSISTANT</span>
-                </div>
-
-                <label htmlFor="dataset">SELECT DATASET</label>
-                <select id="dataset" defaultValue="">
-                  <option value="" disabled>
-                    Choose a dataset...
-                  </option>
-                  <option value="demo">Demo dataset (preview only)</option>
-                </select>
-
-                <label htmlFor="question">YOUR QUESTION</label>
-                <textarea
-                  id="question"
-                  placeholder="e.g. What are the main trends in this dataset?"
-                  rows={4}
-                />
-
-                <div className="question-footer">
-                  <span>Connect a dataset to get started.</span>
-                  <button disabled>Run analysis ↗</button>
-                </div>
-              </section>
+              <AskData
+                onSubmitted={() => setCurrentPage('runs')}
+              />
 
               <section className="activity-section">
                 <div className="section-heading">
@@ -218,10 +185,10 @@ function App() {
 
                 <div className="empty-state">
                   <div className="empty-icon">◷</div>
-                  <strong>No activity yet</strong>
+                  <strong>No activity preview</strong>
                   <p>
-                    Your analysis history will appear here once you run your
-                    first query.
+                    Open Run History to see your submitted analyses and their
+                    current status.
                   </p>
                 </div>
               </section>
