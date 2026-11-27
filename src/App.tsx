@@ -4,6 +4,7 @@ import AppStatus, { type AppStatusType } from './AppStatus'
 import DatasetWorkspace from './datasets/DatasetWorkspace'
 import RunHistory from './runs/RunHistory'
 import AskData from './AskData'
+import Dashboard from './dashboard/Dashboard'
 import { USE_MOCK_DATA } from './config'
 import { useAuth } from './auth/useAuth'
 
@@ -156,43 +157,8 @@ function App() {
             <RunHistory />
           ) : (
             <>
-              <section className="welcome">
-                <p className="eyebrow">YOUR DATA WORKSPACE</p>
-                <h1>Make sense of your data.</h1>
-                <p className="subtitle">
-                  Explore datasets, ask questions, and discover insights
-                  with your AI statistics assistant.
-                </p>
-              </section>
-
-              <AskData
-                onSubmitted={() => setCurrentPage('runs')}
-              />
-
-              <section className="activity-section">
-                <div className="section-heading">
-                  <div>
-                    <h2>Recent activity</h2>
-                    <p>Your latest analysis runs will appear here.</p>
-                  </div>
-                  <button
-                    className="overview-history-link"
-                    onClick={() => setCurrentPage('runs')}
-                  >
-                    View history →
-                  </button>
-                </div>
-
-                <div className="empty-state">
-                  <div className="empty-icon">◷</div>
-                  <strong>No activity preview</strong>
-                  <p>
-                    Open Run History to see your submitted analyses and their
-                    current status.
-                  </p>
-                </div>
-              </section>
-
+              <Dashboard onNavigate={setCurrentPage} />
+              <AskData onSubmitted={() => setCurrentPage('runs')} />
               <footer>
                 DataLens <span>·</span> Your data, understood.
               </footer>
